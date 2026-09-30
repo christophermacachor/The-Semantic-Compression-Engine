@@ -1,0 +1,34 @@
+{
+  "rules": [
+    {
+      "name": "C0_ABSOLUTE",
+      "condition": "irreducible(t) == true",
+      "assign": "C0"
+    },
+    {
+      "name": "C1_DERIVATION",
+      "condition": "irreducible(t) == false && names_operation_from_C0(t) == true",
+      "assign": "C1"
+    },
+    {
+      "name": "C2_INFORMATION",
+      "condition": "irreducible(t) == false && names_operation_from_C0(t) == false && recoverable_structure(t) == true",
+      "assign": "C2"
+    },
+    {
+      "name": "C4_NON_VALID_ENCODING",
+      "condition": "decidable(t) == true && encoding_of_C3(t) == true",
+      "assign": "C4"
+    },
+    {
+      "name": "C3_NON_VALID",
+      "condition": "decidable(t) == true && encoding_of_C3(t) == false",
+      "assign": "C3"
+    },
+    {
+      "name": "UNDECIDABLE",
+      "condition": "decidable(t) == false",
+      "assign": "U"
+    }
+  ]
+}
