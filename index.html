@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SEMANTIC_COMPRESSION_ENGINE v1.0 – Grammar + Validator</title>
+</head>
+<body>
+<pre>
+SEMANTIC_COMPRESSION_ENGINE v1.0
+Function: cancel non-valid tokens; retain C0, C1, C2
+Categories: C0 ABSOLUTE, C1 DERIVATION, C2 INFORMATION (valid);
+            C3 NON-VALID, C4 NON-VALID (no contents)
+Validity boundary: C0–C2 valid; C3–C4 non-valid.
+No promotion: C3/C4 may not be designated C1 or C2.
+No provisional validity: no deferred or pending validity (DDL-5).
+Output: compressed form (C0/C1/C2) + append-only nullification log.
+Governed by: Derivation Domain Law; PLACEHOLDER_LAW v1.1.
+Status: Points, does not guarantee.
+SHA-256: [see registration record]
+</pre>
+
+<h2>1. Formal BNF grammar for the token language</h2>
+<pre>
+&lt;file&gt;              ::= &lt;statement-list&gt;
+
+&lt;statement-list&gt;    ::= &lt;statement&gt;
+                       | &lt;statement&gt; &lt;statement-list&gt;
+
+&lt;statement&gt;         ::= &lt;token&gt;
+                       | &lt;token&gt; &lt;separator&gt; &lt;statement&gt;
+
+&lt;separator&gt;         ::= "." | ";" | "," | ":" | "?" | "!"
+
+&lt;token&gt;             ::= &lt;absolute-token&gt;
+                       | &lt;derivation-token&gt;
+                       | &lt;information-token&gt;
+                       | &lt;placeholder-token&gt;
+                       | &lt;encoding-token&gt;
+                       | &lt;operator-token&gt;
+                       | &lt;particle-token&gt;
+
+&lt;absolute-token&gt;    ::= "ABSOLUTE" | &lt;absolute-lexeme&gt;
+&lt;derivation-token&gt;  ::= "DERIVATION" | &lt;derivation-lexeme&gt;
+&lt;information-token&gt; ::= "INFORMATION" | &lt;information-lexeme&gt;
+&lt;placeholder-token&gt; ::= "PLACEHOLDER" | &lt;placeholder-lexeme&gt;
+&lt;encoding-token&gt;    ::= "ENCODING" | &lt;encoding-lexeme&gt;
+
+&lt;operator-token&gt;    ::= "of" | "and" | "or" | "not"
+                       | "=&gt;" | "&lt;=&gt;" | "+" | "-" | "*" | "/"
+
+&lt;particle-token&gt;    ::= "the" | "a" | "an" | "this" | "that"
+
+&lt;absolute-lexeme&gt;    ::= /* irreducible terms, e.g. "energy", "scalar", "R" */
+&lt;derivation-lexeme&gt;  ::= /* operations from C0, e.g. "derive", "map", "integrate" */
+&lt;information-lexeme&gt; ::= /* structures, e.g. "system", "configuration" */
+&lt;placeholder-lexeme&gt; ::= /* signs, e.g. "equation", "model" */
+&lt;encoding-lexeme&gt;    ::= /* welds/encodings, e.g. "formula", "notation" */
+</pre>
+
+<h3>Validity test function (semantic layer over BNF)</h3>
+<pre>
+CATEGORY ::= C0 | C1 | C2 | C3 | C4 | U ;
+
+VALIDITY_TEST(t) ::=
+      (t.decidable == false)                =&gt; U
+    | (t.irreducible == true)               =&gt; C0
+    | (t.names_operation_from_C0 == true)   =&gt; C1
+    | (t.recoverable_structure == true)     =&gt; C2
+    | (t.encoding_of_C3 == true)            =&gt; C4
+    |                                       =&gt; C3 ;
+</pre>
+
+<h2>2. Deterministic cancellation automaton</h2>
+<pre>
+States:
+  q_start  – initial
+  q_run    – processing tokens
+  q_halt   – halting on UNDECIDABLE
+
+Input alphabet Σ:
+  all &lt;token&gt; instances from the BNF grammar.
+
+Output:
+  compressed form (C0/C1/C2 tokens in order)
+  nullification log (events for C3/C4)
+
+Transition function δ:
+  δ(q_start, t) = q_run
+  δ(q_run,   t) =
+      if VALIDITY_TEST(t) == U:
+          q_halt
+      else:
+          q_run
+  δ(q_halt,  t) = q_halt
+
+Output function λ at q_run:
+  c = VALIDITY_TEST(t)
+
+  if c ∈ {C0, C1, C2}:
+      emit_compressed(t)
+
+  if c ∈ {C3, C4}:
+      emit_nullification_event(t)
+
+  if c == U:
+      // no output; engine halts
+
+NULLIFICATION_EVENT:
+  token: &lt;t.lexeme&gt;
+  claimed_category: &lt;t.claims&gt;
+  assigned_category: &lt;C3 | C4&gt;
+  rule_violated: &lt;DDL | PL-3 | PL-4 | PL-6 | PL-6.1&gt;
+  reason: &lt;string&gt;
+  timestamp: &lt;UTC&gt;
+  hash_of_input: &lt;SHA-256&gt;
+</pre>
+
+<h2>3. Byte-level deterministic validator (registration-grade)</h2>
+<pre>
+Invariant:
+  "The canonical file is stored with no trailing newline,
+   and is hashed byte-for-byte as stored."
+
+Input:
+  byte stream B[0..N-1] of the canonical file.
+
+States:
+  S_START   – before any byte
+  S_BODY    – reading body bytes
+  S_SEEN_LAST – after last byte
+  S_ERROR   – violation
+  S_DONE    – successful validation
+
+Validator DFA:
+
+  state = S_START
+  sha256_ctx = init_sha256()
+
+  for i from 0 to N-1:
+      b = B[i]
+
+      if state == S_START:
+          state = S_BODY
+
+      if state == S_BODY:
+          update_sha256(sha256_ctx, b)
+
+  if N == 0:
+      state = S_ERROR
+  else:
+      state = S_SEEN_LAST
+      last_byte = B[N-1]
+
+  if state == S_SEEN_LAST:
+      if last_byte == 0x0A:        // LF newline
+          state = S_ERROR          // trailing newline violation
+      else:
+          computed_hash = finalize_sha256(sha256_ctx)
+          // compare with stored hash in registration record
+          if computed_hash != stored_hash_in_manifest:
+              state = S_ERROR
+          else:
+              state = S_DONE
+
+Structural substring checks (still deterministic):
+
+  - Require "**Author:** Christopher Macachor"
+  - Require "**Affiliation:** Macachor Absolute Scalar Research"
+  - Require "SEMANTIC_COMPRESSION_ENGINE v1.0"
+  - Require "SHA-256: [see registration record]"
+  - Require "Validity boundary: C0–C2 valid; C3–C4 non-valid."
+
+Any missing or altered substring =&gt; S_ERROR.
+
+Registration behavior:
+
+  - When state == S_DONE:
+      * Record computed SHA-256 in registration record and manifest.
+      * Never re-hash the file again; future validations only compare bytes to the stored hash.
+      * Any byte-level change forces hash mismatch and S_ERROR, breaking canonicity.
+</pre>
+</body>
+</html>
