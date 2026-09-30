@@ -1,183 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>SEMANTIC_COMPRESSION_ENGINE v1.0 – Grammar + Validator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macachor Coherence Engine × Semantic Compression — Validity Tester</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --panel-2: #161616;
+    --border: #262626;
+    --text: #e8e8e8;
+    --dim: #8a8a8a;
+    --valid: #4ade80;
+    --invalid: #f87171;
+    --norm: #60a5fa;
+    --accent: #a78bfa;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+    background: var(--panel);
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .sub {
+    font-size: 12.5px;
+    color: var(--dim);
+    font-family: var(--mono);
+  }
+  .rule {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border-left: 2px solid var(--accent);
+    font-size: 12.5px;
+    color: var(--dim);
+  }
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .input-block {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  input[type="text"] {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 14px;
+    border-radius: 6px;
+    outline: none;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+  button {
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    padding: 12px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  button:hover { opacity: 0.9; }
+  button.ghost {
+    background: transparent;
+    color: var(--dim);
+    border: 1px solid var(--border);
+  }
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 22px;
+  }
+  .examples button {
+    background: var(--panel);
+    color: var(--dim);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .examples button:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .result {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 640px) {
+    .result { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-family: var(--mono);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+  .panel-body {
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 60px;
+  }
+  .token-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #1c1c1c;
+  }
+  .token-row:last-child { border-bottom: none; }
+  .token { color: var(--text); }
+  .tag {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .tag.c0 { background: rgba(167,139,250,0.15); color: var(--accent); }
+  .tag.c2 { background: rgba(74,222,128,0.15); color: var(--valid); }
+  .tag.invalid { background: rgba(248,113,113,0.12); color: var(--invalid); }
+  .tag.norm { background: rgba(96,165,250,0.12); color: var(--norm); }
+  .empty { color: var(--dim); font-style: italic; }
+  .compressed {
+    font-size: 15px;
+    color: var(--valid);
+    word-break: break-word;
+  }
+  .log-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid #1c1c1c;
+    font-size: 12.5px;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry .who { color: var(--text); }
+  .log-entry .why { color: var(--dim); font-size: 11.5px; display: block; margin-top: 2px; }
+  footer {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 24px 40px;
+    font-size: 11.5px;
+    color: var(--dim);
+    font-family: var(--mono);
+    border-top: 1px solid var(--border);
+  }
+</style>
 </head>
 <body>
-<pre>
-SEMANTIC_COMPRESSION_ENGINE v1.0
-Function: cancel non-valid tokens; retain C0, C1, C2
-Categories: C0 ABSOLUTE, C1 DERIVATION, C2 INFORMATION (valid);
-            C3 NON-VALID, C4 NON-VALID (no contents)
-Validity boundary: C0–C2 valid; C3–C4 non-valid.
-No promotion: C3/C4 may not be designated C1 or C2.
-No provisional validity: no deferred or pending validity (DDL-5).
-Output: compressed form (C0/C1/C2) + append-only nullification log.
-Governed by: Derivation Domain Law; PLACEHOLDER_LAW v1.1.
-Status: Points, does not guarantee.
-SHA-256: [see registration record]
-</pre>
 
-<h2>1. Formal BNF grammar for the token language</h2>
-<pre>
-&lt;file&gt;              ::= &lt;statement-list&gt;
+<header>
+  <h1>Macachor Coherence Engine × Semantic Compression</h1>
+  <div class="sub">Validity Tester — v1.0</div>
+  <div class="rule">
+    Only the fundamental is categorical. C0 ABSOLUTE · C1 DERIVATION · C2 INFORMATION.
+    Anything outside the fundamental domain is non-valid. Period.
+  </div>
+</header>
 
-&lt;statement-list&gt;    ::= &lt;statement&gt;
-                       | &lt;statement&gt; &lt;statement-list&gt;
+<main>
+  <div class="input-block">
+    <input type="text" id="input" placeholder="enter words…" autofocus>
+    <button onclick="run()">Test</button>
+    <button class="ghost" onclick="clearAll()">Clear</button>
+  </div>
 
-&lt;statement&gt;         ::= &lt;token&gt;
-                       | &lt;token&gt; &lt;separator&gt; &lt;statement&gt;
+  <div class="examples">
+    <button onclick="setInput('energy')">energy</button>
+    <button onclick="setInput('body')">body</button>
+    <button onclick="setInput('helium')">helium</button>
+    <button onclick="setInput('bodies')">bodies</button>
+    <button onclick="setInput('bodies fall together')">bodies fall together</button>
+    <button onclick="setInput('gravity')">gravity</button>
+    <button onclick="setInput('space curvature')">space curvature</button>
+    <button onclick="setInput('the interpretation of energy')">the interpretation of energy</button>
+    <button onclick="setInput('the bodies of helium')">the bodies of helium</button>
+  </div>
 
-&lt;separator&gt;         ::= "." | ";" | "," | ":" | "?" | "!"
+  <div class="result">
+    <div class="panel">
+      <div class="panel-head">Word decisions</div>
+      <div class="panel-body" id="decisions"><span class="empty">—</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Compressed form</div>
+      <div class="panel-body compressed" id="compressed"><span class="empty">—</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Normalization log</div>
+      <div class="panel-body" id="normLog"><span class="empty">—</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Nullification log</div>
+      <div class="panel-body" id="nullLog"><span class="empty">—</span></div>
+    </div>
+  </div>
+</main>
 
-&lt;token&gt;             ::= &lt;absolute-token&gt;
-                       | &lt;derivation-token&gt;
-                       | &lt;information-token&gt;
-                       | &lt;placeholder-token&gt;
-                       | &lt;encoding-token&gt;
-                       | &lt;operator-token&gt;
-                       | &lt;particle-token&gt;
+<footer>
+  Non-valid is non-valid. Period. · Points, does not guarantee.
+</footer>
 
-&lt;absolute-token&gt;    ::= "ABSOLUTE" | &lt;absolute-lexeme&gt;
-&lt;derivation-token&gt;  ::= "DERIVATION" | &lt;derivation-lexeme&gt;
-&lt;information-token&gt; ::= "INFORMATION" | &lt;information-lexeme&gt;
-&lt;placeholder-token&gt; ::= "PLACEHOLDER" | &lt;placeholder-lexeme&gt;
-&lt;encoding-token&gt;    ::= "ENCODING" | &lt;encoding-lexeme&gt;
-
-&lt;operator-token&gt;    ::= "of" | "and" | "or" | "not"
-                       | "=&gt;" | "&lt;=&gt;" | "+" | "-" | "*" | "/"
-
-&lt;particle-token&gt;    ::= "the" | "a" | "an" | "this" | "that"
-
-&lt;absolute-lexeme&gt;    ::= /* irreducible terms, e.g. "energy", "scalar", "R" */
-&lt;derivation-lexeme&gt;  ::= /* operations from C0, e.g. "derive", "map", "integrate" */
-&lt;information-lexeme&gt; ::= /* structures, e.g. "system", "configuration" */
-&lt;placeholder-lexeme&gt; ::= /* signs, e.g. "equation", "model" */
-&lt;encoding-lexeme&gt;    ::= /* welds/encodings, e.g. "formula", "notation" */
-</pre>
-
-<h3>Validity test function (semantic layer over BNF)</h3>
-<pre>
-CATEGORY ::= C0 | C1 | C2 | C3 | C4 | U ;
-
-VALIDITY_TEST(t) ::=
-      (t.decidable == false)                =&gt; U
-    | (t.irreducible == true)               =&gt; C0
-    | (t.names_operation_from_C0 == true)   =&gt; C1
-    | (t.recoverable_structure == true)     =&gt; C2
-    | (t.encoding_of_C3 == true)            =&gt; C4
-    |                                       =&gt; C3 ;
-</pre>
-
-<h2>2. Deterministic cancellation automaton</h2>
-<pre>
-States:
-  q_start  – initial
-  q_run    – processing tokens
-  q_halt   – halting on UNDECIDABLE
-
-Input alphabet Σ:
-  all &lt;token&gt; instances from the BNF grammar.
-
-Output:
-  compressed form (C0/C1/C2 tokens in order)
-  nullification log (events for C3/C4)
-
-Transition function δ:
-  δ(q_start, t) = q_run
-  δ(q_run,   t) =
-      if VALIDITY_TEST(t) == U:
-          q_halt
+<script>
+/*
+  Total rule:
+    for each word:
+      if word names a bounded, recoverable configuration (C0/C1/C2):
+        normalize to canonical form
+        retain
+        log NORMALIZATION_EVENT if form changed
       else:
-          q_run
-  δ(q_halt,  t) = q_halt
+        cancel
+        log NULLIFICATION_EVENT
+*/
 
-Output function λ at q_run:
-  c = VALIDITY_TEST(t)
+// The valid lexicon. C0 = absolute, C2 = configuration.
+// This is the only place structure is recognized.
+const VALID = {
+  // C0 — absolute / irreducible
+  "energy":      { cat: "C0", canon: "energy" },
 
-  if c ∈ {C0, C1, C2}:
-      emit_compressed(t)
+  // C2 — bounded recoverable configurations
+  "body":        { cat: "C2", canon: "body" },
+  "bodies":      { cat: "C2", canon: "body" },
+  "helium":      { cat: "C2", canon: "helium" },
+  "hydrogen":    { cat: "C2", canon: "hydrogen" },
+  "carbon":      { cat: "C2", canon: "carbon" },
+  "oxygen":      { cat: "C2", canon: "oxygen" },
+  "gold":        { cat: "C2", canon: "gold" },
+  "air":         { cat: "C2", canon: "air" },
+  "water":       { cat: "C2", canon: "water" },
+  "earth":       { cat: "C2", canon: "earth" },
+  "pressure":    { cat: "C2", canon: "pressure" },
+  "temperature": { cat: "C2", canon: "temperature" },
+  "density":     { cat: "C2", canon: "density" },
+  "scalar":      { cat: "C2", canon: "scalar" },
+  "substrate":   { cat: "C2", canon: "substrate" },
+  "structure":   { cat: "C2", canon: "structure" }
+};
 
-  if c ∈ {C3, C4}:
-      emit_nullification_event(t)
+// Function words — removed by normalization, not cancelled.
+const FUNCTION_WORDS = new Set([
+  "the", "a", "an", "of", "and", "or", "to", "in", "on", "at", "by",
+  "is", "are", "was", "were", "be", "been", "being"
+]);
 
-  if c == U:
-      // no output; engine halts
+function tokenize(s) {
+  return s.toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
 
-NULLIFICATION_EVENT:
-  token: &lt;t.lexeme&gt;
-  claimed_category: &lt;t.claims&gt;
-  assigned_category: &lt;C3 | C4&gt;
-  rule_violated: &lt;DDL | PL-3 | PL-4 | PL-6 | PL-6.1&gt;
-  reason: &lt;string&gt;
-  timestamp: &lt;UTC&gt;
-  hash_of_input: &lt;SHA-256&gt;
-</pre>
+function test(word) {
+  if (VALID[word]) return { word, valid: true, cat: VALID[word].cat, canon: VALID[word].canon };
+  return { word, valid: false };
+}
 
-<h2>3. Byte-level deterministic validator (registration-grade)</h2>
-<pre>
-Invariant:
-  "The canonical file is stored with no trailing newline,
-   and is hashed byte-for-byte as stored."
+function run() {
+  const raw = document.getElementById("input").value;
+  const words = tokenize(raw);
 
-Input:
-  byte stream B[0..N-1] of the canonical file.
+  const decisionsEl = document.getElementById("decisions");
+  const compressedEl = document.getElementById("compressed");
+  const normLogEl = document.getElementById("normLog");
+  const nullLogEl = document.getElementById("nullLog");
 
-States:
-  S_START   – before any byte
-  S_BODY    – reading body bytes
-  S_SEEN_LAST – after last byte
-  S_ERROR   – violation
-  S_DONE    – successful validation
+  if (words.length === 0) {
+    decisionsEl.innerHTML = '<span class="empty">—</span>';
+    compressedEl.innerHTML = '<span class="empty">—</span>';
+    normLogEl.innerHTML = '<span class="empty">—</span>';
+    nullLogEl.innerHTML = '<span class="empty">—</span>';
+    return;
+  }
 
-Validator DFA:
+  const decisions = [];
+  const compressed = [];
+  const normEvents = [];
+  const nullEvents = [];
 
-  state = S_START
-  sha256_ctx = init_sha256()
+  for (const w of words) {
+    if (FUNCTION_WORDS.has(w)) {
+      normEvents.push({ from: w, to: null, why: "function word" });
+      decisions.push({ word: w, tag: "norm", label: "function" });
+      continue;
+    }
+    const t = test(w);
+    if (t.valid) {
+      const changed = t.canon !== w;
+      decisions.push({ word: w, tag: t.cat === "C0" ? "c0" : "c2", label: t.cat });
+      compressed.push(t.canon);
+      if (changed) {
+        normEvents.push({ from: w, to: t.canon, why: "canonical form" });
+      }
+    } else {
+      decisions.push({ word: w, tag: "invalid", label: "non-valid" });
+      nullEvents.push({ word: w });
+    }
+  }
 
-  for i from 0 to N-1:
-      b = B[i]
+  // Render decisions
+  decisionsEl.innerHTML = decisions.map(d => `
+    <div class="token-row">
+      <span class="token">${escapeHtml(d.word)}</span>
+      <span class="tag ${d.tag}">${d.label}</span>
+    </div>
+  `).join("");
 
-      if state == S_START:
-          state = S_BODY
+  // Render compressed
+  compressedEl.textContent = compressed.length ? compressed.join(" ") : "";
+  if (!compressed.length) compressedEl.innerHTML = '<span class="empty">(empty)</span>';
 
-      if state == S_BODY:
-          update_sha256(sha256_ctx, b)
+  // Render normalization log
+  if (normEvents.length) {
+    normLogEl.innerHTML = normEvents.map(e => `
+      <div class="log-entry">
+        <span class="who">${escapeHtml(e.from)} → ${e.to ? escapeHtml(e.to) : "(removed)"}</span>
+        <span class="why">${escapeHtml(e.why)}</span>
+      </div>
+    `).join("");
+  } else {
+    normLogEl.innerHTML = '<span class="empty">—</span>';
+  }
 
-  if N == 0:
-      state = S_ERROR
-  else:
-      state = S_SEEN_LAST
-      last_byte = B[N-1]
+  // Render nullification log
+  if (nullEvents.length) {
+    nullLogEl.innerHTML = nullEvents.map(e => `
+      <div class="log-entry">
+        <span class="who">${escapeHtml(e.word)}</span>
+        <span class="why">OUTSIDE_FUNDAMENTAL · not C0/C1/C2</span>
+      </div>
+    `).join("");
+  } else {
+    nullLogEl.innerHTML = '<span class="empty">—</span>';
+  }
+}
 
-  if state == S_SEEN_LAST:
-      if last_byte == 0x0A:        // LF newline
-          state = S_ERROR          // trailing newline violation
-      else:
-          computed_hash = finalize_sha256(sha256_ctx)
-          // compare with stored hash in registration record
-          if computed_hash != stored_hash_in_manifest:
-              state = S_ERROR
-          else:
-              state = S_DONE
+function setInput(v) {
+  document.getElementById("input").value = v;
+  run();
+}
 
-Structural substring checks (still deterministic):
+function clearAll() {
+  document.getElementById("input").value = "";
+  run();
+  document.getElementById("input").focus();
+}
 
-  - Require "**Author:** Christopher Macachor"
-  - Require "**Affiliation:** Macachor Absolute Scalar Research"
-  - Require "SEMANTIC_COMPRESSION_ENGINE v1.0"
-  - Require "SHA-256: [see registration record]"
-  - Require "Validity boundary: C0–C2 valid; C3–C4 non-valid."
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[c]);
+}
 
-Any missing or altered substring =&gt; S_ERROR.
+document.getElementById("input").addEventListener("keydown", e => {
+  if (e.key === "Enter") run();
+});
+</script>
 
-Registration behavior:
-
-  - When state == S_DONE:
-      * Record computed SHA-256 in registration record and manifest.
-      * Never re-hash the file again; future validations only compare bytes to the stored hash.
-      * Any byte-level change forces hash mismatch and S_ERROR, breaking canonicity.
-</pre>
 </body>
 </html>
