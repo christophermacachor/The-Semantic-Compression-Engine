@@ -1,0 +1,8 @@
+{
+  "lexeme": "energy",
+  "type": "noun | verb | operator | symbol | formula",
+  "claims": ["C0" | "C1" | "C2" | null],
+  "is_encoding": true | false,
+  "requires_interpreter": true | false,
+  "has_C0_ancestor": true | false
+}
